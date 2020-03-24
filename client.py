@@ -1,6 +1,9 @@
 import socket
         
 from threading import Thread
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES, PKCS1_OAEP
 
 HOST = '127.0.0.1'
 PORT = 5000
@@ -19,9 +22,23 @@ client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
 client_socket.connect((HOST , PORT))
+recv_msg = client_socket.recv(BUFF_SIZE)
+server_public_key = RSA.importKey(recv_msg, passphrase=None)
+print(server_public_key)
+
+session_key = get_random_bytes(16)
+
+# Encrypt the session key with the public RSA key
+cipher_rsa = PKCS1_OAEP.new(server_public_key)
+enc_session_key = cipher_rsa.encrypt(session_key)
+# session_key_msg = enc_session_key
+session_key_msg = bytearray(i for i in enc_session_key)
+print(type(session_key_msg))
+print(session_key_msg)
+client_socket.send(session_key_msg)
 
 # receive welcome message 
-msg = client_socket.recv(BUFF_SIZE).decode("utf-8") 
+msg = client_socket.recv(BUFF_SIZE).decode("utf-8")
 print(msg)
 
 name = input("Enter your name : ")
@@ -31,7 +48,7 @@ name = name.encode("utf-8")
 client_socket.send(name) 
 
 # receive  second welcome message 
-msg = client_socket.recv(BUFF_SIZE).decode("utf-8") 
+msg = client_socket.recv(BUFF_SIZE).decode("utf-8")
 print(msg)
 
 def clientSend():
@@ -52,15 +69,18 @@ t.start()
 
 import sys   
 
-try:
-    while True:
-        recv_msg = client_socket.recv(BUFF_SIZE)
-        recv_msg = recv_msg.decode('utf-8')
-        if msg != "{quite}" : 
-             print( '\n' , recv_msg)
-        # recv 'quite' to close 
-        else:
-            print("I left chat")
-            break
-except: 
-    print()
+# try:
+while True:
+    recv_msg = client_socket.recv(BUFF_SIZE)
+    cipher = AES.new(session_key, AES.MODE_EAX)
+    data = cipher.decrypt(bytearray(recv_msg))
+    # print(data)
+    # recv_msg = data.decode('utf-8')
+    if msg != "{quite}" :
+         print( '\n' , data)
+    # recv 'quite' to close
+    else:
+        print("I left chat")
+        break
+# except:
+#     print("ffffffffffff")
