@@ -1,3 +1,4 @@
+import base64
 import socket
 
 from threading import Thread
@@ -70,14 +71,15 @@ def handleClient(con):
 
 def sendToAll(msg, src, con1):  # keep track of no-defaut must be last
     src = src + "::" + msg
-    msg = msg.encode("utf-8")
+    #Changed from UTF-8 to ISO to fix issues, We can use ("utf-8")
+    msg = msg.encode("ISO-8859-1")
     for con in clients:
-        key=clients_keys[con]
+        key = clients_keys[con]
         if con != con1:
             cipher = AES.new(key, AES.MODE_EAX)
             ciphertext = cipher.encrypt(msg)
-            con.send(bytearray(ciphertext))
-            print(bytearray(ciphertext))
+            con.send(ciphertext)
+            print(ciphertext)
 
 
 t = Thread(target=accept_connections)
