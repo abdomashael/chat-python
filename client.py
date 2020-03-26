@@ -5,6 +5,7 @@ from threading import Thread
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.Hash import MD5
 
 HOST = '127.0.0.1'
 PORT = 5000
@@ -28,7 +29,7 @@ print(server_public_key)
 session_key = get_random_bytes(16)
 
 # Encrypt the session key with the public RSA key
-cipher_rsa = PKCS1_OAEP.new(server_public_key)
+cipher_rsa = PKCS1_OAEP.new(server_public_key, hashAlgo=MD5)
 enc_session_key = cipher_rsa.encrypt(session_key)
 # session_key_msg = enc_session_key
 session_key_msg = bytearray(i for i in enc_session_key)
@@ -73,17 +74,16 @@ import sys
 while True:
     recv_msg = client_socket.recv(BUFF_SIZE)
     print(recv_msg)
-    #Ciphertext Recieved Correctly
+    # Ciphertext Recieved Correctly
 
-    #Decryption Error Or Key Error ???
+    # Decryption Error Or Key Error ???
+    print(session_key)
     cipher = AES.new(session_key, AES.MODE_EAX)
-    #Changed from UTF-8 to ISO to fix issues, We can use ("utf-8", errors="ignore")
+    # Changed from UTF-8 to ISO to fix issues, We can use ("utf-8", errors="ignore")
     data = cipher.decrypt(recv_msg).decode("ISO-8859-1")
-    if msg != "{quite}":
+    if data != "{quite}":
         print('\n', data)
     # recv 'quite' to close
     else:
         print("I left chat")
         break
-# except:
-#     print("ffffffffffff")

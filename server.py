@@ -5,6 +5,7 @@ from threading import Thread
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
+from Crypto.Hash import MD5
 
 HOST = '127.0.0.1'
 PORT = 5000
@@ -37,7 +38,7 @@ def accept_connections():
         clinet_rec = bytes(clinet_rec)
 
         # Decrypt the session key with the private RSA key
-        cipher_rsa = PKCS1_OAEP.new(key)
+        cipher_rsa = PKCS1_OAEP.new(key, hashAlgo=MD5)
         session_key = cipher_rsa.decrypt(clinet_rec)
         clients_keys[con] = session_key
         con.send("Welcome to Fathi Chat, plz enter name ".encode('utf-8'))
@@ -71,14 +72,17 @@ def handleClient(con):
 
 def sendToAll(msg, src, con1):  # keep track of no-defaut must be last
     src = src + "::" + msg
-    #Changed from UTF-8 to ISO to fix issues, We can use ("utf-8")
+    # Changed from UTF-8 to ISO to fix issues, We can use ("utf-8")
     msg = msg.encode("ISO-8859-1")
     for con in clients:
-        key = clients_keys[con]
         if con != con1:
+            print("Server Session Key")
+            key = clients_keys[con]
+            print(key)
             cipher = AES.new(key, AES.MODE_EAX)
             ciphertext = cipher.encrypt(msg)
             con.send(ciphertext)
+            print("Server Cipher Text: ")
             print(ciphertext)
 
 
