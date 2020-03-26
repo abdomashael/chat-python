@@ -1,5 +1,6 @@
 import base64
 import socket
+from os import urandom
 
 from threading import Thread
 from Crypto.Cipher import PKCS1_OAEP, AES
@@ -73,17 +74,30 @@ def handleClient(con):
 def sendToAll(msg, src, con1):  # keep track of no-defaut must be last
     src = src + "::" + msg
     # Changed from UTF-8 to ISO to fix issues, We can use ("utf-8")
-    msg = msg.encode("ISO-8859-1")
+    # msg = msg.encode("ISO-8859-1")
+    msg = msg.encode("utf-16")
+    iv = urandom(16)
+    print(iv)
+    length = 16 - (len(msg) % 16)
+    msg += bytes([length]) * length
     for con in clients:
         if con != con1:
-            print("Server Session Key")
+            # print("Server Session Key")
             key = clients_keys[con]
-            print(key)
-            cipher = AES.new(key, AES.MODE_EAX)
+            # print(key)
+            cipher = AES.new(key, AES.MODE_CFB,iv)
             ciphertext = cipher.encrypt(msg)
+            cipher = AES.new(key, AES.MODE_CFB,iv)
+            # data = cipher.decrypt(ciphertext).decode("ISO-8859-1")
+            data = cipher.decrypt(ciphertext)
+            data = data[:-data[-1]]
+            data = data.decode("utf-16")
+            print(data)
             con.send(ciphertext)
-            print("Server Cipher Text: ")
-            print(ciphertext)
+            iv = bytearray(i for i in iv)
+            con.send(iv)
+            # print("Server Cipher Text: ")
+            # print(ciphertext)
 
 
 t = Thread(target=accept_connections)

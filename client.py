@@ -1,5 +1,6 @@
 import base64
 import socket
+from os import urandom
 
 from threading import Thread
 from Crypto.PublicKey import RSA
@@ -73,14 +74,25 @@ import sys
 # try:
 while True:
     recv_msg = client_socket.recv(BUFF_SIZE)
+    iv = client_socket.recv(16)
+    iv = bytearray(iv)
+    iv = bytes(iv)
+    print("len: ")
+    print(len(iv))
     print(recv_msg)
     # Ciphertext Recieved Correctly
 
     # Decryption Error Or Key Error ???
-    print(session_key)
-    cipher = AES.new(session_key, AES.MODE_EAX)
+    # print(session_key)
+    cipher = AES.new(session_key, AES.MODE_CFB,iv)
+    # print("type")
+    # print(type(cipher))
     # Changed from UTF-8 to ISO to fix issues, We can use ("utf-8", errors="ignore")
-    data = cipher.decrypt(recv_msg).decode("ISO-8859-1")
+    data = cipher.decrypt(recv_msg)
+    data = data[:-data[-1]]
+
+    data = data.decode("utf-16")
+
     if data != "{quite}":
         print('\n', data)
     # recv 'quite' to close
